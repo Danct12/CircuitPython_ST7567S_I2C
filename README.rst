@@ -1,23 +1,7 @@
 Introduction
 ============
 
-.. image:: https://readthedocs.org/projects/adafruit-circuitpython-st7565/badge/?version=latest
-    :target: https://docs.circuitpython.org/projects/st7565/en/latest/
-    :alt: Documentation Status
-
-.. image:: https://raw.githubusercontent.com/adafruit/Adafruit_CircuitPython_Bundle/main/badges/adafruit_discord.svg
-    :target: https://adafru.it/discord
-    :alt: Discord
-
-.. image:: https://github.com/adafruit/Adafruit_CircuitPython_ST7565/workflows/Build%20CI/badge.svg
-    :target: https://github.com/adafruit/Adafruit_CircuitPython_ST7565/actions/
-    :alt: Build Status
-
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
-    :alt: Code Style: Black
-
-A display control library for ST7565 graphic displays
+This is a port of `Adafruit ST7565 library <https://github.com/adafruit/Adafruit_CircuitPython_ST7565>`_ to ST7567S I2C displays.
 
 Dependencies
 =============
@@ -37,6 +21,8 @@ See examples folder for demos of pixels, lines, and text!
 
 Documentation
 =============
+
+Since this is a port of the original library, the API remains the same except for name changes.
 
 API documentation for this library can be found on `Read the Docs <https://docs.circuitpython.org/projects/st7565/en/latest/>`_.
 

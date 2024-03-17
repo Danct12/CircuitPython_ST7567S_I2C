@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Alec Delaney for Adafruit Industries
+# SPDX-FileCopyrightText: 2024 Danct12
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,18 +11,17 @@ requires = [
 ]
 
 [project]
-name = "adafruit-circuitpython-st7565"
-description = "CircuitPython display control library for devices using the ST7565 graphic display driver IC."
+name = "circuitpython-st7567s-i2c"
+description = "CircuitPython display control library for devices using the ST7567S graphic display driver IC."
 version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
-    {name = "Adafruit Industries", email = "circuitpython@adafruit.com"}
+    {name = "Danct12", email = "danct12@disroot.org"}
 ]
 urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_ST7565"}
 keywords = [
-    "adafruit",
     "display",
-    "st7565",
+    "st7567s",
     "monochrome",
     "displays",
     "hardware",
@@ -40,7 +40,7 @@ classifiers = [
 dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools]
-py-modules = ["adafruit_st7565"]
+py-modules = ["circuitpython_st7567s_i2c"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
