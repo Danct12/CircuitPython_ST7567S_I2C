@@ -1,15 +1,17 @@
 # SPDX-FileCopyrightText: 2018 Tony DiCola for Adafruit Industries
 # SPDX-FileCopyrightText: 2018 ladyada for Adafruit Industries
 # SPDX-FileCopyrightText: 2021 Mark Olsson <mark@markolsson.se>
+# SPDX-FileCopyrightText: 2024 Danct12
 #
 # SPDX-License-Identifier: MIT
 
 """
-`adafruit_st7565`
+`circuitpython_st7567s_i2c`
 ====================================================
 
-A display control library for ST7565 graphic displays
+A display control library for ST7567S graphic displays
 
+Based on adafruit_st7565:
 * Author(s): ladyada, Mark Olsson
 
 Implementation Notes
@@ -17,7 +19,7 @@ Implementation Notes
 
 **Hardware:**
 
-* `ST7565 graphic display <https://www.adafruit.com/product/250>`_
+* TZT 12864 I2C ST7567S graphic display
 
 **Software and Dependencies:**
 
@@ -30,12 +32,12 @@ Implementation Notes
 
 import time
 from micropython import const
-from adafruit_bus_device import spi_device
+from adafruit_bus_device import i2c_device
 
 try:
     from typing import Optional
     from digitalio import DigitalInOut
-    from busio import SPI
+    from busio import I2C
 except ImportError:
     pass
 
@@ -45,10 +47,10 @@ except ImportError:
     import adafruit_framebuf as framebuf
 
 __version__ = "0.0.0+auto.0"
-__repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_ST7565.git"
+__repo__ = "https://github.com/Danct12/circuitpython_st7567s_i2c.git"
 
 
-class ST7565(framebuf.FrameBuffer):
+class ST7567S(framebuf.FrameBuffer):
     """ST7565-based LCD display."""
 
     # pylint: disable=too-many-instance-attributes
@@ -83,28 +85,16 @@ class ST7565(framebuf.FrameBuffer):
     CMD_SET_RESISTOR_RATIO = const(0x20)
     CMD_SET_VOLUME_FIRST = const(0x81)
     CMD_SET_VOLUME_SECOND = const(0x00)
-    CMD_SET_STATIC_OFF = const(0xAC)
-    CMD_SET_STATIC_ON = const(0xAD)
-    CMD_SET_STATIC_REG = const(0x00)
 
     def __init__(
         self,
-        spi: SPI,
-        dc_pin: DigitalInOut,
-        cs_pin: DigitalInOut,
-        reset_pin: Optional[DigitalInOut] = None,
+        i2c: I2C,
+        i2c_addr: int,
         *,
-        contrast: int = 0,
-        baudrate: int = 1000000
+        contrast: int = 0
     ) -> None:
-        self._dc_pin = dc_pin
-        dc_pin.switch_to_output(value=False)
 
-        self.spi_device = spi_device.SPIDevice(spi, cs_pin, baudrate=baudrate)
-
-        self._reset_pin = reset_pin
-        if reset_pin:
-            reset_pin.switch_to_output(value=True)
+        self.i2c_device = i2c_device.I2CDevice(i2c, i2c_addr)
 
         self.buffer = bytearray(self.LCDHEIGHT * self.LCDWIDTH)
         super().__init__(self.buffer, self.LCDWIDTH, self.LCDHEIGHT)
@@ -115,11 +105,11 @@ class ST7565(framebuf.FrameBuffer):
         self.reset()
 
         # LCD bias select
-        self.write_cmd(self.CMD_SET_BIAS_7)
+        self.write_cmd(self.CMD_SET_BIAS_9)
         # ADC select
-        self.write_cmd(self.CMD_SET_ADC_REVERSE)
+        self.write_cmd(self.CMD_SET_ADC_NORMAL)
         # SHL select
-        self.write_cmd(self.CMD_SET_COM_NORMAL)
+        self.write_cmd(self.CMD_SET_COM_REVERSE)
         # Initial display line
         self.write_cmd(self.CMD_SET_DISP_START_LINE)
         # Turn on voltage converter (VC=1, VR=0, VF=0)
@@ -132,7 +122,7 @@ class ST7565(framebuf.FrameBuffer):
         self.write_cmd(self.CMD_SET_POWER_CONTROL | 0x7)
         time.sleep(0.01)
         # Set lcd operating voltage (regulator resistor, ref voltage resistor)
-        self.write_cmd(self.CMD_SET_RESISTOR_RATIO | 0x7)
+        self.write_cmd(self.CMD_SET_RESISTOR_RATIO | 0x5)
         # Turn on display
         self.write_cmd(self.CMD_DISPLAY_ON)
         # Display all points
@@ -142,22 +132,17 @@ class ST7565(framebuf.FrameBuffer):
         self.contrast = contrast
 
     def reset(self) -> None:
-        """Reset the display"""
-        if self._reset_pin:
-            # Toggle RST low to reset.
-            self._reset_pin.value = False
-            time.sleep(0.5)
-            self._reset_pin.value = True
-            time.sleep(0.5)
+        """Soft reset the display. HW reset would be ideal but no such thing for I2C."""
+        self.write_cmd(self.CMD_INTERNAL_RESET)
 
     def write_cmd(self, cmd: int) -> None:
-        """Send a command to the SPI device"""
-        self._dc_pin.value = False
-        with self.spi_device as spi:
-            spi.write(bytearray([cmd]))  # pylint: disable=no-member
+        """Send a command to the I2C device"""
+        with self.i2c_device as i2c:
+            # Co=0, A0=0 (page 23 of ST7567S datasheet)
+            i2c.write(bytearray([0x00, cmd]))  # pylint: disable=no-member
 
     def show(self) -> None:
-        """write out the frame buffer via SPI"""
+        """write out the frame buffer via I2C"""
         for page in self.pagemap:
             # Home cursor on the page
             # Set page
@@ -171,10 +156,9 @@ class ST7565(framebuf.FrameBuffer):
             row_start = page << 7
             # Page stop row
             row_stop = (page + 1) << 7
-            # slice page from buffer and pack bits to bytes then send to display
-            self._dc_pin.value = True
-            with self.spi_device as spi:
-                spi.write(self.buffer[row_start:row_stop])  # pylint: disable=no-member
+            with self.i2c_device as i2c:
+                # Co=0, A0=1 (page 23 of ST7567S datasheet)
+                i2c.write(b'\x40' + self.buffer[row_start:row_stop])  # pylint: disable=no-member
 
     @property
     def invert(self) -> bool:
