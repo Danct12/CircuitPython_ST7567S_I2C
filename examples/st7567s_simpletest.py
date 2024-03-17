@@ -1,28 +1,20 @@
 # SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-FileCopyrightText: 2021 Mark Olsson <mark@markolsson.se>
+# SPDX-FileCopyrightText: 2024 Danct12
 # SPDX-License-Identifier: MIT
 
 import time
 import board
 import busio
-import digitalio
 
-import adafruit_st7565
+import circuitpython_st7567s_i2c
 
-# Initialize SPI bus and control pins
-spi = busio.SPI(board.SCK, MOSI=board.MOSI)
-dc = digitalio.DigitalInOut(board.D5)  # data/command
-cs = digitalio.DigitalInOut(board.D6)  # Chip select
-reset = digitalio.DigitalInOut(board.D9)  # reset
+# Initialize I2C bus and control pins
+i2c = busio.I2C(board.GP5, board.GP4, frequency=400000)
 
-display = adafruit_st7565.ST7565(spi, dc, cs, reset)
+display = circuitpython_st7567s_i2c.ST7567S(i2c, 0x3f)
 
-display.contrast = 0
-
-# Turn on the Backlight LED
-backlight = digitalio.DigitalInOut(board.D10)  # backlight
-backlight.switch_to_output()
-backlight.value = True
+display.contrast = 30
 
 print("Pixel test")
 # Clear the display.  Always call show after changing pixels to make the display
@@ -71,7 +63,7 @@ display.text("this is the", 0, 8, 1)
 display.text("CircuitPython", 0, 16, 1)
 display.text("adafruit lib-", 0, 24, 1)
 display.text("rary for the", 0, 32, 1)
-display.text("ST7565! :) ", 0, 40, 1)
+display.text("ST7567S! :) ", 0, 40, 1)
 
 display.show()
 
